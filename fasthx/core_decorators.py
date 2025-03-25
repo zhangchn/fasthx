@@ -1,7 +1,7 @@
 import inspect
 from collections.abc import Callable
 from functools import wraps
-from typing import Coroutine
+from typing import Coroutine, Optional, Union
 
 from fastapi import HTTPException, Response, status
 from fastapi.responses import HTMLResponse
@@ -15,8 +15,8 @@ def hx(
     render: HTMLRenderer[T],
     *,
     no_data: bool = False,
-    render_error: HTMLRenderer[Exception] | None = None,
-) -> Callable[[MaybeAsyncFunc[P, T]], Callable[P, Coroutine[None, None, T | Response]]]:
+    render_error: Optional[HTMLRenderer[Exception]] = None,
+) -> Callable[[MaybeAsyncFunc[P, T]], Callable[P, Coroutine[None, None, Union[T, Response]]]]:
     """
     Decorator that converts a FastAPI route's return value into HTML if the request was
     an HTMX one.
@@ -31,11 +31,11 @@ def hx(
         The rendered HTML for HTMX requests, otherwise the route's unchanged return value.
     """
 
-    def decorator(func: MaybeAsyncFunc[P, T]) -> Callable[P, Coroutine[None, None, T | Response]]:
+    def decorator(func: MaybeAsyncFunc[P, T]) -> Callable[P, Coroutine[None, None, Union[T, Response]]]:
         @wraps(func)
         async def wrapper(
             __hx_request: DependsHXRequest, *args: P.args, **kwargs: P.kwargs
-        ) -> T | Response:
+        ) -> Union[T, Response]:
             if no_data and __hx_request is None:
                 raise HTTPException(
                     status.HTTP_400_BAD_REQUEST, "This route can only process HTMX requests."
@@ -87,7 +87,7 @@ def hx(
 def page(
     render: HTMLRenderer[T],
     *,
-    render_error: HTMLRenderer[Exception] | None = None,
+    render_error: Optional[HTMLRenderer[Exception]] = None,
 ) -> Callable[[MaybeAsyncFunc[P, T]], Callable[P, Coroutine[None, None, Response]]]:
     """
     Decorator that converts a FastAPI route's return value into HTML.
@@ -102,7 +102,7 @@ def page(
         @wraps(func)
         async def wrapper(
             __page_request: DependsPageRequest, *args: P.args, **kwargs: P.kwargs
-        ) -> T | Response:
+        ) -> Union[T, Response]:
             try:
                 result = await execute_maybe_sync_func(func, *args, **kwargs)
                 renderer = render

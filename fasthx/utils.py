@@ -1,7 +1,7 @@
 import inspect
 from asyncio import iscoroutinefunction
 from collections.abc import Callable, Mapping
-from typing import Any, cast
+from typing import Any, cast, Optional
 
 from fastapi import Response
 from fastapi.concurrency import run_in_threadpool
@@ -48,7 +48,7 @@ async def execute_maybe_sync_func(func: MaybeAsyncFunc[P, T], *args: P.args, **k
     return await run_in_threadpool(cast(Callable[P, T], func), *args, **kwargs)
 
 
-def get_response(kwargs: Mapping[str, Any]) -> Response | None:
+def get_response(kwargs: Mapping[str, Any]) -> Optional[Response]:
     """
     Returns the first `Response` instance from the values in `kwargs` (if there is one).
 

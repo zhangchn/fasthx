@@ -1,12 +1,12 @@
 from dataclasses import dataclass, field
-from typing import Generic
+from typing import Generic, Union, Optional
 
 from fastapi import Request
 
 from .typing import T
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class ComponentHeader(Generic[T]):
     """
     Component selector that takes the component key from a request header.
@@ -33,14 +33,16 @@ class ComponentHeader(Generic[T]):
     components: dict[str, T]
     """Dictionary that maps errors to component factories."""
 
-    error: type[Exception] | tuple[type[Exception], ...] | None = field(default=None, kw_only=True)
+    error: Union[type[Exception], tuple[type[Exception], ...], None] = field(default=None)
     """The accepted error or errors."""
 
-    default: T | None = field(default=None, kw_only=True)
+    default: Optional[T] = field(default=None)
     """The component factory to use if the client didn't request a specific one."""
 
-    case_sensitive: bool = field(default=False, kw_only=True)
+    case_sensitive: bool = field(default=False)
     """Whether the keys of `components` are case-sensitive or not (default is `False`)."""
+
+    __slots__ = ['header', 'components', ]
 
     def __post_init__(self) -> None:
         if not self.case_sensitive:
@@ -50,7 +52,7 @@ class ComponentHeader(Generic[T]):
                 {k.lower(): v for k, v in self.components.items()},
             )
 
-    def get_component(self, request: Request, error: Exception | None) -> T:
+    def get_component(self, request: Request, error: Optional[Exception]) -> T:
         """
         Returns the component factory to use to render the response.
 

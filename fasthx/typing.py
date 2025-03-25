@@ -1,5 +1,13 @@
-from collections.abc import Callable, Coroutine
-from typing import Any, ParamSpec, Protocol, TypeAlias, TypeVar, runtime_checkable
+#from collections.abc import Callable, Coroutine
+from typing_extensions import Callable, Coroutine
+
+import sys
+from typing import Any, Protocol, TypeVar, runtime_checkable, Union, Optional
+
+if sys.version_info < (3, 10):
+    from typing_extensions import ParamSpec, TypeAlias
+else:
+    from typing import ParamSpec, TypeAlias
 
 from fastapi import Request, Response
 
@@ -8,13 +16,16 @@ T = TypeVar("T")
 Tco = TypeVar("Tco", covariant=True)
 Tcontra = TypeVar("Tcontra", contravariant=True)
 
-MaybeAsyncFunc = Callable[P, T] | Callable[P, Coroutine[Any, Any, T]]
+if sys.version_info < (3, 10):
+    MaybeAsyncFunc = Union[Callable[P, T], Callable[P, Coroutine[Any, Any, T]]]
+else:
+    MaybeAsyncFunc = Callable[P, T] | Callable[P, Coroutine[Any, Any, T]]
 
 
 class SyncHTMLRenderer(Protocol[Tcontra]):
     """Sync HTML renderer definition."""
 
-    def __call__(self, result: Tcontra, *, context: dict[str, Any], request: Request) -> str | Response:
+    def __call__(self, result: Tcontra, *, context: dict[str, Any], request: Request) -> Union[str, Response]:
         """
         Arguments:
             result: The result of the route the renderer is used on.
@@ -32,7 +43,7 @@ class AsyncHTMLRenderer(Protocol[Tcontra]):
 
     async def __call__(
         self, result: Tcontra, *, context: dict[str, Any], request: Request
-    ) -> str | Response:
+    ) -> Union[str, Response]:
         """
         Arguments:
             result: The result of the route the renderer is used on.
@@ -45,7 +56,7 @@ class AsyncHTMLRenderer(Protocol[Tcontra]):
         ...
 
 
-HTMLRenderer = SyncHTMLRenderer[Tcontra] | AsyncHTMLRenderer[Tcontra]
+HTMLRenderer = Union[SyncHTMLRenderer[Tcontra], AsyncHTMLRenderer[Tcontra]]
 """Sync or async HTML renderer type."""
 
 
@@ -78,7 +89,7 @@ class RequestComponentSelector(Protocol[Tco]):
     The protocol is runtime-checkable, so it can be used in `isinstance()`, `issubclass()` calls.
     """
 
-    def get_component(self, request: Request, error: Exception | None) -> Tco:
+    def get_component(self, request: Request, error: Optional[Exception]) -> Tco:
         """
         Returns the component that was requested by the client.
 
@@ -105,5 +116,5 @@ class RequestComponentSelector(Protocol[Tco]):
         ...
 
 
-ComponentSelector: TypeAlias = T | RequestComponentSelector[T]
+ComponentSelector: TypeAlias = Union[T, RequestComponentSelector[T]]
 """Type alias for known component selectors."""

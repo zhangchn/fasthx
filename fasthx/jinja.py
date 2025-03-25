@@ -1,7 +1,7 @@
 from collections.abc import Callable, Collection, Iterable
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import Any, Coroutine
+from typing import Any, Coroutine, Optional, Union
 
 from fastapi import Request, Response
 from fastapi.templating import Jinja2Templates
@@ -63,7 +63,7 @@ class JinjaContext:
         if isinstance(obj, Collection):
             return {"items": obj}
 
-        object_keys: Iterable[str] | None = None
+        object_keys: Optional[Iterable[str]] = None
 
         # __dict__ should take priority if an object has both this and __slots__.
         if hasattr(obj, "__dict__"):
@@ -127,8 +127,8 @@ class JinjaContext:
     @classmethod
     def use_converters(
         cls,
-        convert_route_result: Callable[[Any], dict[str, Any]] | None,
-        convert_route_context: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
+        convert_route_result: Optional[Callable[[Any], dict[str, Any]]],
+        convert_route_context: Optional[Callable[[dict[str, Any]], dict[str, Any]]] = None,
     ) -> JinjaContextFactory:
         """
         Creates a `JinjaContextFactory` that uses the provided functions to convert
@@ -159,7 +159,7 @@ class JinjaContext:
 
     @classmethod
     @lru_cache
-    def wrap_as(cls, result_key: str, context_key: str | None = None) -> JinjaContextFactory:
+    def wrap_as(cls, result_key: str, context_key: Optional[str] = None) -> JinjaContextFactory:
         """
         Creates a `JinjaContextFactory` that wraps the route's result and optionally the route
         context under user-specified keys.
@@ -193,7 +193,7 @@ class JinjaContext:
         return wrap
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class TemplateHeader:
     """
     Template selector that takes the Jinja template name from a request header.
@@ -218,15 +218,16 @@ class TemplateHeader:
     templates: dict[str, str]
     """Dictionary that maps template keys to template (file) names."""
 
-    error: type[Exception] | tuple[type[Exception], ...] | None = field(default=None, kw_only=True)
+    error: Union[type[Exception], tuple[type[Exception], ...], None] = field(default=None)
     """The accepted error or errors."""
 
-    default: str | None = field(default=None, kw_only=True)
+    default: Optional[str] = field(default=None)
     """The template to use when the client didn't request a specific one."""
 
-    case_sensitive: bool = field(default=False, kw_only=True)
+    case_sensitive: bool = field(default=False)
     """Whether the keys of `templates` are case-sensitive or not (default is `False`)."""
 
+    __slots__ = ['header', 'templates', ]
     def __post_init__(self) -> None:
         if not self.case_sensitive:
             object.__setattr__(
@@ -235,7 +236,7 @@ class TemplateHeader:
                 {k.lower(): v for k, v in self.templates.items()},
             )
 
-    def get_component(self, request: Request, error: Exception | None) -> str:
+    def get_component(self, request: Request, error: Optional[Exception]) -> str:
         """
         Returns the name of the template that was requested by the client.
 
@@ -260,7 +261,7 @@ class TemplateHeader:
             return self.default
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class Jinja:
     """Jinja2 renderer utility with FastAPI route decorators."""
 
@@ -273,7 +274,7 @@ class Jinja:
     a Jinja rendering context. The default value is `JinjaContext.unpack_result`.
     """
 
-    no_data: bool = field(default=False, kw_only=True)
+    no_data: bool = field(default=False,)
     """
     If set, `hx()` routes will only accept HTMX requests.
 
@@ -285,11 +286,11 @@ class Jinja:
         self,
         template: ComponentSelector[str],
         *,
-        error_template: ComponentSelector[str] | None = None,
-        make_context: JinjaContextFactory | None = None,
+        error_template: Optional[ComponentSelector[str]] = None,
+        make_context: Optional[JinjaContextFactory] = None,
         no_data: bool = False,
-        prefix: str | None = None,
-    ) -> Callable[[MaybeAsyncFunc[P, Any]], Callable[P, Coroutine[None, None, Any | Response]]]:
+        prefix: Optional[str] = None,
+    ) -> Callable[[MaybeAsyncFunc[P, Any]], Callable[P, Coroutine[None, None, Union[Any, Response]]]]:
         """
         Decorator for rendering a route's result if the request was an HTMX one.
 
@@ -321,10 +322,10 @@ class Jinja:
         self,
         template: ComponentSelector[str],
         *,
-        error_template: ComponentSelector[str] | None = None,
-        make_context: JinjaContextFactory | None = None,
-        prefix: str | None = None,
-    ) -> Callable[[MaybeAsyncFunc[P, Any]], Callable[P, Coroutine[None, None, Any | Response]]]:
+        error_template: Optional[ComponentSelector[str]] = None,
+        make_context: Optional[JinjaContextFactory] = None,
+        prefix: Optional[str] = None,
+    ) -> Callable[[MaybeAsyncFunc[P, Any]], Callable[P, Coroutine[None, None, Union[Any, Response]]]]:
         """
         Decorator for rendering a route's result.
 
@@ -354,7 +355,7 @@ class Jinja:
         template: ComponentSelector[str],
         *,
         make_context: JinjaContextFactory,
-        prefix: str | None,
+        prefix: Optional[str],
         error_renderer: bool = False,
     ) -> HTMLRenderer[Any]:
         """
@@ -367,7 +368,7 @@ class Jinja:
             error_renderer: Whether this is an error renderer creation.
         """
 
-        def render(result: Any, *, context: dict[str, Any], request: Request) -> str | Response:
+        def render(result: Any, *, context: dict[str, Any], request: Request) -> Union[str, Response]:
             template_name = self._resolve_template_name(
                 template,
                 error=result if error_renderer else None,
@@ -388,7 +389,7 @@ class Jinja:
         *,
         jinja_context: dict[str, Any],
         request: Request,
-    ) -> str | Response:
+    ) -> Union[str, Response]:
         """
         Creates the HTML response using the given Jinja template name and context.
 
@@ -416,8 +417,8 @@ class Jinja:
         self,
         template: ComponentSelector[str],
         *,
-        error: Exception | None = None,
-        prefix: str | None,
+        error: Optional[Exception] = None,
+        prefix: Optional[str],
         request: Request,
     ) -> str:
         """

@@ -56,7 +56,7 @@ class CurrentRequest:
         raise TypeError(f"Invalid context data for {cls.__name__}.")
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class RouteParams:
     """
     HTMY context aware utility for accessing route parameters (resolved dependencies).
@@ -68,6 +68,8 @@ class RouteParams:
 
     params: dict[str, Any]
     """Route parameters."""
+
+    __slots__ = ['params']
 
     def __contains__(self, key: str) -> bool:
         """Membership test operator (`in`)."""
@@ -101,7 +103,7 @@ class RouteParams:
         raise TypeError(f"Invalid context data type for {cls.__name__}.")
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class HTMY:
     """
     HTMY renderer utility with FastAPI route decorators.
@@ -131,6 +133,8 @@ class HTMY:
     A list of functions that expect the current request and return an `htmy` `Context` that should
     be used during rendering in addition to the default context of `self.htmy`.
     """
+
+    __slots__ = ['htmy', 'no_data', 'request_processors']
 
     def hx(
         self,

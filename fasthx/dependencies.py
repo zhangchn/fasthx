@@ -1,6 +1,11 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Annotated, Any, TypeAlias
+from typing import TYPE_CHECKING, Annotated, Any, Optional
 
+import sys
+if sys.version_info < (3, 10):
+    from typing_extensions import TypeAlias
+else:
+    from typing import TypeAlias
 from fastapi import Depends, Header
 from fastapi import Request as FARequest
 
@@ -19,8 +24,8 @@ else:
 
 
 def get_hx_request(
-    request: FARequest, hx_request: Annotated[str | None, Header()] = None
-) -> Request | None:
+    request: FARequest, hx_request: Annotated[Optional[str], Header()] = None
+) -> Optional[Request]:
     """
     FastAPI dependency that returns the current request if it is an HTMX one,
     i.e. it contains an `"HX-Request: true"` header.
@@ -36,7 +41,7 @@ def get_page_request(request: FARequest) -> Request:
     return request
 
 
-DependsHXRequest = Annotated[Request | None, Depends(get_hx_request)]
+DependsHXRequest = Annotated[Optional[Request], Depends(get_hx_request)]
 """Annotated type (dependency) for `get_hx_request()` for FastAPI."""
 
 DependsPageRequest = Annotated[Request, Depends(get_page_request)]

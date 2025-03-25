@@ -46,9 +46,11 @@ class HelloWorld:
         return "Hello World!"
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class BaseUserComponent:
     user: User
+
+    __slots__ = ['user']
 
     @final
     def htmy(self, context: Context) -> Component:
@@ -80,9 +82,11 @@ class UserListItem(BaseUserComponent):
         return html.li(self.user.name, self._render_active())
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class UserList:
     users: Sequence[User]
+
+    __slots__ = ['users']
 
     def htmy(self, context: Context) -> Component:
         return html.ul(*(UserListItem(u) for u in self.users))
