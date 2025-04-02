@@ -3,6 +3,7 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.testclient import TestClient
 
 from fasthx import DependsHXRequest, get_hx_request
+from typing import Optional
 
 
 @pytest.fixture
@@ -12,7 +13,7 @@ def app() -> FastAPI:
     @app.get("/")
     def main(
         hx_request_1: DependsHXRequest,
-        hx_request_2: Request | None = Depends(get_hx_request),  # noqa: B008
+        hx_request_2: Optional[Request] = Depends(get_hx_request),  # noqa: B008
     ) -> dict[str, bool]:
         return {
             "hx_request_1": hx_request_1 is not None,
@@ -35,7 +36,7 @@ def client(app: FastAPI) -> TestClient:
         ({"HX-Request": "true"}, True),
     ),
 )
-def test_get_hx_request(client: TestClient, headers: dict[str, str] | None, is_hx_request: bool) -> None:
+def test_get_hx_request(client: TestClient, headers: Optional[dict[str, str]], is_hx_request: bool) -> None:
     response = client.get("/", headers=headers)
     result = response.json()
     assert result["hx_request_1"] == result["hx_request_2"] == is_hx_request

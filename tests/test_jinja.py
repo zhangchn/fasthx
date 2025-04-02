@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 import pytest
 from fastapi import FastAPI, Response
@@ -88,7 +88,7 @@ def jinja_app() -> FastAPI:  # noqa: C901
         ),
         no_data=True,
     )
-    def error(response: Response, kind: str | None = None) -> None:
+    def error(response: Response, kind: Optional[str] = None) -> None:
         if kind:
             # Unhandled error type to see if we get HTTP 500
             raise ValueError(kind)
@@ -106,7 +106,7 @@ def jinja_app() -> FastAPI:  # noqa: C901
             error=(RenderedError, TypeError, SyntaxError),  # Test error tuple
         ),
     )
-    def error_page(response: Response, kind: str | None = None) -> None:
+    def error_page(response: Response, kind: Optional[str] = None) -> None:
         if kind:
             # Unhandled error type to see if we get HTTP 500
             raise ValueError(kind)
@@ -204,7 +204,7 @@ def jinja_client(jinja_app: FastAPI) -> TestClient:
 def test_jinja(
     jinja_client: TestClient,
     route: str,
-    headers: dict[str, str] | None,
+    headers: Optional[dict[str, str]],
     status: int,
     expected: str,
     response_headers: dict[str, str],

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, Any
+from typing_extensions import TypeAlias
 
 import htmy as h
 from fastapi import Request, Response

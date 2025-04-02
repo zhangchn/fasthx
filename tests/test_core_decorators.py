@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 import pytest
 from fastapi import FastAPI, Request, Response
@@ -123,7 +123,7 @@ def hx_client(hx_app: FastAPI) -> TestClient:
 def test_hx_and_page(
     hx_client: TestClient,
     route: str,
-    headers: dict[str, str] | None,
+    headers: Optional[dict[str, str]],
     status: int,
     expected: str,
     response_headers: dict[str, str],
@@ -156,9 +156,9 @@ def test_hx_and_page(
 def test_hx_and_page_error_rendering(
     hx_client: TestClient,
     route: str,
-    headers: dict[str, str] | None,
+    headers: Optional[dict[str, str]],
     status: int,
-    expected: str | None,
+    expected: Optional[str],
 ) -> None:
     response = hx_client.get(route, headers=headers)
     assert response.status_code == status

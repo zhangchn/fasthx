@@ -227,7 +227,7 @@ class TemplateHeader:
     case_sensitive: bool = field(default=False)
     """Whether the keys of `templates` are case-sensitive or not (default is `False`)."""
 
-    __slots__ = ['header', 'templates', ]
+    #__slots__ = ['header', 'templates', ]
     def __post_init__(self) -> None:
         if not self.case_sensitive:
             object.__setattr__(
