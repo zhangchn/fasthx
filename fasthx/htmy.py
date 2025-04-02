@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional, Union
 from typing_extensions import TypeAlias
 
 import htmy as h
@@ -121,7 +121,7 @@ class HTMY:
     htmy: h.Renderer = field(default_factory=h.Renderer)
     """The HTMY renderer to use."""
 
-    no_data: bool = field(default=False, kw_only=True)
+    no_data: bool = field(default=False)
     """
     If set, `hx()` routes will only accept HTMX requests.
 
@@ -129,21 +129,21 @@ class HTMY:
     will have no effect.
     """
 
-    request_processors: list[RequestProcessor] = field(default_factory=list, kw_only=True)
+    request_processors: list[RequestProcessor] = field(default_factory=list)
     """
     A list of functions that expect the current request and return an `htmy` `Context` that should
     be used during rendering in addition to the default context of `self.htmy`.
     """
 
-    __slots__ = ['htmy', 'no_data', 'request_processors']
+    #__slots__ = ['htmy', 'no_data', 'request_processors']
 
     def hx(
         self,
         component_selector: HTMYComponentSelector[T],
         *,
-        error_component_selector: HTMYComponentSelector[Exception] | None = None,
+        error_component_selector: Optional[HTMYComponentSelector[Exception]] = None,
         no_data: bool = False,
-    ) -> Callable[[MaybeAsyncFunc[P, T]], Callable[P, Coroutine[None, None, T | Response]]]:
+    ) -> Callable[[MaybeAsyncFunc[P, T]], Callable[P, Coroutine[None, None, Union[T, Response]]]]:
         """
         Decorator for rendering the route's result if the request was an HTMX one.
 
@@ -164,8 +164,8 @@ class HTMY:
         self,
         component_selector: HTMYComponentSelector[T],
         *,
-        error_component_selector: HTMYComponentSelector[Exception] | None = None,
-    ) -> Callable[[MaybeAsyncFunc[P, T]], Callable[P, Coroutine[None, None, T | Response]]]:
+        error_component_selector: Optional[HTMYComponentSelector[Exception]] = None,
+    ) -> Callable[[MaybeAsyncFunc[P, T]], Callable[P, Coroutine[None, None, Union[T, Response]]]]:
         """
         Decorator for rendering a route's result.
 
